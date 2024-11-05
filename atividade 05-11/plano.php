@@ -1,5 +1,5 @@
 <?php
-require 'conexão.php';
+require 'conexão.php'; // Assegure-se de que este arquivo está correto e funcional
 ?>
 
 <!DOCTYPE html>
@@ -12,9 +12,13 @@ require 'conexão.php';
 <body>
     <header>
         <h1>Cadastro de Planos</h1>
+        <div class="navigation">
+            <a href="index.php">← Voltar para a Página Principal</a>
+        </div>
     </header>
     
     <div class="container">
+        <!-- Incluir Plano -->
         <h2>Incluir Plano</h2>
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['incluir'])) {
@@ -33,7 +37,7 @@ require 'conexão.php';
                 ]);
                 echo '<div class="alert">Plano incluído com sucesso!</div>';
             } catch (PDOException $e) {
-                echo '<div class="error">Erro ao incluir o plano: ' . $e->getMessage() . '</div>';
+                echo '<div class="error">Erro ao incluir o plano: ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
         }
         ?>
@@ -51,6 +55,8 @@ require 'conexão.php';
             
             <button type="submit">Incluir Plano</button>
         </form>
+
+        <!-- Alterar Plano -->
         <h2>Alterar Plano</h2>
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar'])) {
@@ -61,8 +67,8 @@ require 'conexão.php';
 
             try {
                 $sql = "UPDATE plano 
-                        SET numero = :numero, descricao = :descricao, valor = :valor 
-                        WHERE numero = :numero_original";
+                        SET pla_numero = :numero, pla_descricao = :descricao, pla_valor = :valor 
+                        WHERE pla_numero = :numero_original";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':numero' => $numero,
@@ -72,11 +78,10 @@ require 'conexão.php';
                 ]);
                 echo '<div class="alert">Plano alterado com sucesso!</div>';
             } catch (PDOException $e) {
-                echo '<div class="error">Erro ao alterar o plano: ' . $e->getMessage() . '</div>';
+                echo '<div class="error">Erro ao alterar o plano: ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
         }
 
-        
         $numero_alterar = '';
         $descricao_alterar = '';
         $valor_alterar = '';
@@ -85,19 +90,19 @@ require 'conexão.php';
         if (isset($_GET['alterar_numero'])) {
             $numero_original = $_GET['alterar_numero'];
             try {
-                $sql = "SELECT * FROM plano WHERE numero = :numero";
+                $sql = "SELECT * FROM plano WHERE pla_numero = :numero";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([':numero' => $numero_original]);
                 $plano = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($plano) {
-                    $numero_alterar = $plano['numero'];
-                    $descricao_alterar = $plano['descricao'];
-                    $valor_alterar = $plano['valor'];
+                    $numero_alterar = $plano['pla_numero'];
+                    $descricao_alterar = $plano['pla_descricao'];
+                    $valor_alterar = $plano['pla_valor'];
                 } else {
                     echo '<div class="error">Plano não encontrado.</div>';
                 }
             } catch (PDOException $e) {
-                echo '<div class="error">Erro ao buscar o plano: ' . $e->getMessage() . '</div>';
+                echo '<div class="error">Erro ao buscar o plano: ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
         }
         ?>
@@ -120,7 +125,6 @@ require 'conexão.php';
             <button type="submit">Alterar Plano</button>
         </form>
 
-        
         <!-- Excluir Plano -->
         <h2>Excluir Plano</h2>
         <?php
@@ -128,16 +132,16 @@ require 'conexão.php';
             $numero = $_POST['numero_excluir'];
 
             try {
-                
-                $sql_verifica = "SELECT COUNT(*) FROM cliente WHERE plano = :numero";
+                // Verifica se existem associados vinculados a este plano
+                $sql_verifica = "SELECT COUNT(*) FROM associado WHERE cli_plano = :numero";
                 $stmt_verifica = $pdo->prepare($sql_verifica);
                 $stmt_verifica->execute([':numero' => $numero]);
                 $count = $stmt_verifica->fetchColumn();
 
                 if ($count > 0) {
-                    echo '<div class="error">Não é possível excluir o plano. Existem clientes vinculados a este plano.</div>';
+                    echo '<div class="error">Não é possível excluir o plano. Existem associados vinculados a este plano.</div>';
                 } else {
-                    $sql = "DELETE FROM plano WHERE numero = :numero";
+                    $sql = "DELETE FROM plano WHERE pla_numero = :numero";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([':numero' => $numero]);
 
@@ -148,7 +152,7 @@ require 'conexão.php';
                     }
                 }
             } catch (PDOException $e) {
-                echo '<div class="error">Erro ao excluir o plano: ' . $e->getMessage() . '</div>';
+                echo '<div class="error">Erro ao excluir o plano: ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
         }
         ?>
@@ -161,7 +165,6 @@ require 'conexão.php';
             <button type="submit">Excluir Plano</button>
         </form>
 
-        
         <!-- Buscar Plano -->
         <h2>Buscar Plano</h2>
         <?php
@@ -169,21 +172,21 @@ require 'conexão.php';
             $numero = $_GET['buscar'];
 
             try {
-                $sql = "SELECT * FROM plano WHERE numero = :numero";
+                $sql = "SELECT * FROM plano WHERE pla_numero = :numero";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([':numero' => $numero]);
                 $plano = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($plano) {
                     echo '<h3>Detalhes do Plano</h3>';
-                    echo '<p><strong>Número:</strong> ' . htmlspecialchars($plano['numero']) . '</p>';
-                    echo '<p><strong>Descrição:</strong> ' . htmlspecialchars($plano['descricao']) . '</p>';
-                    echo '<p><strong>Valor:</strong> R$ ' . htmlspecialchars($plano['valor']) . '</p>';
+                    echo '<p><strong>Número:</strong> ' . htmlspecialchars($plano['pla_numero']) . '</p>';
+                    echo '<p><strong>Descrição:</strong> ' . htmlspecialchars($plano['pla_descricao']) . '</p>';
+                    echo '<p><strong>Valor:</strong> R$ ' . htmlspecialchars(number_format($plano['pla_valor'], 2, ',', '.')) . '</p>';
                 } else {
                     echo '<div class="error">Plano não encontrado.</div>';
                 }
             } catch (PDOException $e) {
-                echo '<div class="error">Erro ao buscar o plano: ' . $e->getMessage() . '</div>';
+                echo '<div class="error">Erro ao buscar o plano: ' . htmlspecialchars($e->getMessage()) . '</div>';
             }
         }
         ?>
@@ -194,7 +197,6 @@ require 'conexão.php';
             <button type="submit">Buscar Plano</button>
         </form>
 
-        
         <!-- Listagem de Planos -->
         <h2>Listagem de Planos</h2>
         <?php
@@ -209,12 +211,12 @@ require 'conexão.php';
                 echo '<tr><th>Número</th><th>Descrição</th><th>Valor (R$)</th><th>Ações</th></tr>';
                 foreach ($planos as $plano) {
                     echo '<tr>';
-                    echo '<td>' . htmlspecialchars($plano['numero']) . '</td>';
-                    echo '<td>' . htmlspecialchars($plano['descricao']) . '</td>';
-                    echo '<td>' . htmlspecialchars($plano['valor']) . '</td>';
+                    echo '<td>' . htmlspecialchars($plano['pla_numero']) . '</td>';
+                    echo '<td>' . htmlspecialchars($plano['pla_descricao']) . '</td>';
+                    echo '<td>' . htmlspecialchars(number_format($plano['pla_valor'], 2, ',', '.')) . '</td>';
                     echo '<td>';
-                    echo '<a href="plano.php?alterar_numero=' . urlencode($plano['numero']) . '">Alterar</a> | ';
-                    echo '<a href="plano.php?buscar=' . urlencode($plano['numero']) . '">Buscar</a>';
+                    echo '<a href="plano.php?alterar_numero=' . urlencode($plano['pla_numero']) . '">Alterar</a> | ';
+                    echo '<a href="plano.php?buscar=' . urlencode($plano['pla_numero']) . '">Buscar</a>';
                     echo '</td>';
                     echo '</tr>';
                 }
@@ -224,7 +226,7 @@ require 'conexão.php';
                 echo '<p>Nenhum plano encontrado.</p>';
             }
         } catch (PDOException $e) {
-            echo '<div class="error">Erro ao listar os planos: ' . $e->getMessage() . '</div>';
+            echo '<div class="error">Erro ao listar os planos: ' . htmlspecialchars($e->getMessage()) . '</div>';
         }
         ?>
     </div>
